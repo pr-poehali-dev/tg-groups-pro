@@ -11,6 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 
 const categories = [
   'Все категории',
@@ -33,33 +41,63 @@ const subscriberRanges = [
   'Более 1M',
 ];
 
-const topChannels = [
+interface Channel {
+  id: number;
+  name: string;
+  description: string;
+  subscribers: number;
+  category: string;
+  verified: boolean;
+  icon: string;
+  fullDescription?: string;
+  tags?: string[];
+  postsPerDay?: number;
+  views?: number;
+  link?: string;
+}
+
+const topChannels: Channel[] = [
   {
     id: 1,
     name: 'РИА Новости',
     description: 'Официальный канал информационного агентства РИА Новости',
+    fullDescription: 'Официальный канал РИА Новости - крупнейшего российского информационного агентства. Оперативные новости из России и мира, эксклюзивные репортажи, аналитика событий, фото и видеоматериалы.',
     subscribers: 1200000,
     category: 'Новости',
     verified: true,
     icon: '📰',
+    tags: ['Новости', 'Политика', 'Экономика', 'Общество'],
+    postsPerDay: 45,
+    views: 3500000,
+    link: 'https://t.me/rian_ru',
   },
   {
     id: 2,
     name: 'ForkLog',
     description: 'Все о криптовалютах, блокчейне и децентрализованных финансах',
+    fullDescription: 'ForkLog - ведущее русскоязычное медиа о криптовалютах, блокчейне и децентрализованных финансах. Новости рынка, аналитика, обучающие материалы для трейдеров и инвесторов.',
     subscribers: 450000,
     category: 'Криптовалюты',
     verified: true,
     icon: '₿',
+    tags: ['Крипта', 'Blockchain', 'DeFi', 'Trading'],
+    postsPerDay: 20,
+    views: 1200000,
+    link: 'https://t.me/forklog',
   },
   {
     id: 3,
     name: 'Боевики | Фильмы HD',
     description: 'Лучшие боевики и фильмы в HD качестве каждый день',
+    fullDescription: 'Качественные боевики и фильмы в HD качестве. Регулярные обновления, новинки кино, классика жанра. Бесплатный доступ к большой коллекции фильмов.',
     subscribers: 780000,
     category: 'Кино',
     verified: false,
     icon: '🎬',
+    tags: ['Боевики', 'Фильмы', 'HD', 'Кино'],
+    postsPerDay: 8,
+    views: 980000,
+    link: 'https://t.me/action_movies_hd',
   },
   {
     id: 4,
@@ -157,6 +195,13 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Все категории');
   const [selectedRange, setSelectedRange] = useState('Любое количество');
+  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleChannelClick = (channel: Channel) => {
+    setSelectedChannel(channel);
+    setIsDialogOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0F172A] to-[#020817]">
@@ -212,6 +257,7 @@ const Index = () => {
             {topChannels.map((channel, index) => (
               <Card
                 key={channel.id}
+                onClick={() => handleChannelClick(channel)}
                 className={`hover-lift cursor-pointer ${
                   index < 3 ? 'border-2 border-primary premium-glow' : 'border-border'
                 } bg-card/80 backdrop-blur-sm`}
@@ -318,6 +364,7 @@ const Index = () => {
             {recentChannels.map((channel) => (
               <Card
                 key={channel.id}
+                onClick={() => handleChannelClick(channel)}
                 className="hover-lift cursor-pointer bg-card/80 backdrop-blur-sm border-border"
               >
                 <CardContent className="p-6">
@@ -437,6 +484,120 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl bg-card/95 backdrop-blur-md border-border">
+          {selectedChannel && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start space-x-4 mb-4">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-5xl flex-shrink-0">
+                    {selectedChannel.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <DialogTitle className="text-2xl font-bold">
+                        {selectedChannel.name}
+                      </DialogTitle>
+                      {selectedChannel.verified && (
+                        <Icon name="BadgeCheck" size={24} className="text-secondary" />
+                      )}
+                    </div>
+                    <Badge className="gold-gradient text-black">
+                      {selectedChannel.category}
+                    </Badge>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <DialogDescription className="text-base text-foreground leading-relaxed mb-4">
+                {selectedChannel.fullDescription || selectedChannel.description}
+              </DialogDescription>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <Card className="bg-background/50 border-border/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-2 text-muted-foreground mb-1">
+                      <Icon name="Users" size={18} />
+                      <span className="text-sm">Подписчики</span>
+                    </div>
+                    <p className="text-2xl font-bold">
+                      {formatSubscribers(selectedChannel.subscribers)}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-background/50 border-border/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-2 text-muted-foreground mb-1">
+                      <Icon name="Eye" size={18} />
+                      <span className="text-sm">Просмотры</span>
+                    </div>
+                    <p className="text-2xl font-bold">
+                      {selectedChannel.views ? formatSubscribers(selectedChannel.views) : 'N/A'}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-background/50 border-border/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-2 text-muted-foreground mb-1">
+                      <Icon name="FileText" size={18} />
+                      <span className="text-sm">Постов в день</span>
+                    </div>
+                    <p className="text-2xl font-bold">
+                      {selectedChannel.postsPerDay || 'N/A'}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-background/50 border-border/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-2 text-muted-foreground mb-1">
+                      <Icon name="TrendingUp" size={18} />
+                      <span className="text-sm">ERR</span>
+                    </div>
+                    <p className="text-2xl font-bold">12.4%</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {selectedChannel.tags && selectedChannel.tags.length > 0 && (
+                <>
+                  <Separator className="my-4" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-3">Теги</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedChannel.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-sm">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <Separator className="my-4" />
+
+              <div className="flex space-x-3">
+                <Button
+                  className="flex-1 gold-gradient text-black font-semibold hover:opacity-90"
+                  size="lg"
+                  onClick={() => selectedChannel.link && window.open(selectedChannel.link, '_blank')}
+                >
+                  <Icon name="Send" size={20} className="mr-2" />
+                  Перейти в канал
+                </Button>
+                <Button variant="outline" size="lg" className="flex-1">
+                  <Icon name="Megaphone" size={20} className="mr-2" />
+                  Разместить рекламу
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
