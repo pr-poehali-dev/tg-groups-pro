@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Link } from 'react-router-dom';
 
 const categories = [
   'Все категории',
@@ -203,6 +204,36 @@ const Index = () => {
     setIsDialogOpen(true);
   };
 
+  const allChannels = useMemo(() => [...topChannels, ...recentChannels], []);
+
+  const filteredChannels = useMemo(() => {
+    return allChannels.filter((channel) => {
+      const matchesSearch =
+        searchQuery === '' ||
+        channel.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        channel.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesCategory =
+        selectedCategory === 'Все категории' || channel.category === selectedCategory;
+
+      const matchesRange = (() => {
+        if (selectedRange === 'Любое количество') return true;
+        const subs = channel.subscribers;
+        if (selectedRange === 'До 1K') return subs < 1000;
+        if (selectedRange === '1K - 10K') return subs >= 1000 && subs < 10000;
+        if (selectedRange === '10K - 100K') return subs >= 10000 && subs < 100000;
+        if (selectedRange === '100K - 1M') return subs >= 100000 && subs < 1000000;
+        if (selectedRange === 'Более 1M') return subs >= 1000000;
+        return true;
+      })();
+
+      return matchesSearch && matchesCategory && matchesRange;
+    });
+  }, [searchQuery, selectedCategory, selectedRange, allChannels]);
+
+  const topFilteredChannels = filteredChannels.filter((ch) => topChannels.includes(ch));
+  const recentFilteredChannels = filteredChannels.filter((ch) => recentChannels.includes(ch));
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0F172A] to-[#020817]">
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -218,13 +249,13 @@ const Index = () => {
                 </span>
               </div>
               <nav className="hidden md:flex items-center space-x-6">
-                <a href="#" className="text-foreground hover:text-primary transition-colors">
+                <Link to="/" className="text-foreground hover:text-primary transition-colors">
                   Главная
-                </a>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                </Link>
+                <Link to="/categories" className="text-muted-foreground hover:text-primary transition-colors">
                   Категории
-                </a>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                </Link>
+                <a href="#top" className="text-muted-foreground hover:text-primary transition-colors">
                   ТОП каналов
                 </a>
                 <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
@@ -233,28 +264,33 @@ const Index = () => {
               </nav>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm">
-                Войти
-              </Button>
-              <Button size="sm" className="gold-gradient text-black font-semibold hover:opacity-90">
-                <Icon name="Plus" size={16} className="mr-1" />
-                Добавить канал
-              </Button>
+              <Link to="/dashboard">
+                <Button variant="outline" size="sm">
+                  Личный кабинет
+                </Button>
+              </Link>
+              <Link to="/dashboard">
+                <Button size="sm" className="gold-gradient text-black font-semibold hover:opacity-90">
+                  <Icon name="Plus" size={16} className="mr-1" />
+                  Добавить канал
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <section className="mb-12">
+        <section className="mb-12" id="top">
           <div className="text-center mb-8">
             <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-yellow-300 to-primary bg-clip-text text-transparent">
               ТОП КАНАЛЫ
             </h1>
             <p className="text-muted-foreground">Премиум размещение для лучших telegram каналов</p>
           </div>
+          {topFilteredChannels.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {topChannels.map((channel, index) => (
+            {topFilteredChannels.map((channel, index) => (
               <Card
                 key={channel.id}
                 onClick={() => handleChannelClick(channel)}
@@ -297,6 +333,11 @@ const Index = () => {
               </Card>
             ))}
           </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Каналы не найдены</p>
+            </div>
+          )}
         </section>
 
         <section className="mb-12">
@@ -358,10 +399,11 @@ const Index = () => {
           </Card>
         </section>
 
+        {recentFilteredChannels.length > 0 && (
         <section>
           <h2 className="text-3xl font-bold mb-6">Недавно добавленные каналы</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recentChannels.map((channel) => (
+            {recentFilteredChannels.map((channel) => (
               <Card
                 key={channel.id}
                 onClick={() => handleChannelClick(channel)}
@@ -400,6 +442,7 @@ const Index = () => {
             ))}
           </div>
         </section>
+        )}
       </main>
 
       <footer className="border-t border-border/50 bg-card/30 backdrop-blur-sm mt-16">
